@@ -3,7 +3,7 @@ require "Prodiction"
 if myHero.charName ~= "Orianna" or not VIP_USER then return end
 
 local ballPos = myHero
-local version = 1.1
+local version = 1.2
 enemyHealth = {}
 
 local InterruptList = 
@@ -54,14 +54,17 @@ function OnLoad()
 		Menu:addSubMenu("Combo", "Combo")
 		Menu.Combo:addParam("UseQ", "Use Q", SCRIPT_PARAM_ONOFF , true)
 		Menu.Combo:addParam("UseW1", "Use W", SCRIPT_PARAM_ONOFF , true)
-		Menu.Combo:addParam("UseW", "Use W if it will hit at least", SCRIPT_PARAM_SLICE, 1, 1, 5)
-		Menu.Combo:addParam("UseR", "Use R if it will hit at least", SCRIPT_PARAM_SLICE, 3, 1, 5)
+		Menu.Combo:addParam("UseR1", "Use R", SCRIPT_PARAM_ONOFF , true)
 		Menu.Combo:addParam("Enabled", "Normal combo", SCRIPT_PARAM_ONKEYDOWN, false, 32)
+		Menu.Combo:addParam("UseE", "Use E for deepest ally in enemies", SCRIPT_PARAM_ONOFF, true)
+		Menu.Combo:addParam("UseE2", "Force self shield if enemy is in range", SCRIPT_PARAM_ONOFF, true)
+		Menu.Combo:addParam("UseE2Range", "Range:", SCRIPT_PARAM_SLICE, 500, 0, 700)
 
-		Menu:addSubMenu("E", "E")
-		Menu.E:addParam("UseE", "Use E for deepest ally in enemies", SCRIPT_PARAM_ONOFF, true)
-		Menu.E:addParam("UseE2", "Force self shield if enemy is in range", SCRIPT_PARAM_ONOFF, true)
-		Menu.E:addParam("UseE2Range", "Range:", SCRIPT_PARAM_SLICE, 500, 0, 700)
+		Menu:addSubMenu("Harass", "Harass")
+		Menu.Harass:addParam("harassKeyDown", "Harass", SCRIPT_PARAM_ONKEYDOWN , false, 192)
+		Menu.Harass:addParam("harassKeyToggle", "Harass (TOGGLE)", SCRIPT_PARAM_ONKEYTOGGLE, false, 192)
+		Menu.Harass:addParam("harassQ", "Use Q", SCRIPT_PARAM_ONOFF , true)
+		Menu.Harass:addParam("harassW", "Use W", SCRIPT_PARAM_ONOFF , true)
 
 		Menu:addSubMenu("Block", "Block")
 		Menu.Block:addParam("Block", "Block ultimate if it will hit nothing", SCRIPT_PARAM_ONOFF, true)
@@ -69,6 +72,8 @@ function OnLoad()
 
 		Menu:addSubMenu("Misc", "Misc")
 		Menu.Misc:addParam("packets", "Use packets", SCRIPT_PARAM_ONOFF, true)
+		Menu.Misc:addParam("UseW", "Use W if it will hit at least", SCRIPT_PARAM_SLICE, 1, 1, 5)
+		Menu.Misc:addParam("UseR", "Use R if it will hit at least", SCRIPT_PARAM_SLICE, 3, 1, 5)
 		Menu.Misc:addParam("rKill", "Kill enemy with ultimate if its possible", SCRIPT_PARAM_ONOFF, false)
 		Menu.Misc:addParam("autolvl", "Auto lvl", SCRIPT_PARAM_ONOFF, true)
 		Menu.Misc:addParam("autoMax", "Skill order:", SCRIPT_PARAM_LIST, 2, { "R>Q>W>E", "R>W>Q>E"})
@@ -125,7 +130,7 @@ if Menu.Combo.UseQ and myHero:CanUseSpell(_Q) == READY and myHero:GetSpellData(_
 end
 
 if Menu.Combo.UseW1 and myHero:CanUseSpell(_W) == READY and myHero:GetSpellData(_W).level > 0 then
-		if checkEnemiesHitWithW() >= Menu.Combo.UseW then
+		if checkEnemiesHitWithW() >= Menu.Misc.UseW then
 			if Menu.Misc.packets then
 				Packet('S_CAST', {spellId = _W}):send()
 			else
@@ -134,8 +139,8 @@ if Menu.Combo.UseW1 and myHero:CanUseSpell(_W) == READY and myHero:GetSpellData(
 	    end
 end
 
-if Menu.Combo.UseR and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
-		if checkEnemiesHitWithR() >= Menu.Combo.UseR then
+if Menu.Misc.UseR1 and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
+		if checkEnemiesHitWithR() >= Menu.Misc.UseR then
 			if Menu.Misc.packets then
 				Packet('S_CAST', {spellId = _R}):send()
 			else
@@ -143,7 +148,7 @@ if Menu.Combo.UseR and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_
 			end
 	    end
 end
-if Menu.E.UseE and myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
+if Menu.Combo.UseE and myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
 		CastE()
 end
 if Menu.Block.Interrupt and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
@@ -154,6 +159,27 @@ if Menu.Misc.rKill and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_
 end
 
 end -- enabled
+-----------------------------------------------------------------------------------------------HARASS
+if Menu.Harass.harassKeyDown or Menu.Harass.harassKeyToggle then
+
+if Menu.Combo.UseQ and myHero:CanUseSpell(_Q) == READY and myHero:GetSpellData(_Q).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
+
+	local Qpos, info = Prodiction.GetLineAOEPrediction(ts.target, Qrange, BallSpeed, Qdelay, Qradius, ballPos)
+		if Qpos then
+			--Packet("S_CAST", {spellId = _Q,  Qpos.x, Qpos.z, ballPos.x, ballPos.z, targetNetworkId = ts.networkID}):send()
+			CastSpell(_Q, Qpos.x, Qpos.z)
+	    end
+end
+
+if myHero:CanUseSpell(_W) == READY and myHero:GetSpellData(_W).level > 0 and checkEnemiesHitWithW() > 0 then
+	if Menu.Misc.packets then
+		Packet('S_CAST', {spellId = _W}):send()
+	else
+		CastSpell(_W)
+	end
+end
+
+end --harass
 
 end -- ontick
 
@@ -260,9 +286,9 @@ function CastE()
 		end
 	end
 
-	if Menu.E.UseE2 then
+	if Menu.Combo.UseE2 then
 		for _, enemy in ipairs(enemyPos) do
-			if GetDistance(enemy, myHero) <= Menu.E.UseE2Range then
+			if GetDistance(enemy, myHero) <= Menu.Combo.UseE2Range then
 				allyToShield = myHero
 			end
 		end
