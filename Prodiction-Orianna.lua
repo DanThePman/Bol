@@ -304,7 +304,11 @@ function killR ()
 
 for _, enemy in ipairs(enemyHealth) do
 	if enemy.health <= GetDamage(_R, enemy) then
-		CastSpell(_R)
+		if Menu.Misc.packets then
+			Packet('S_CAST', {spellId = _R}):send()
+		else
+			CastSpell(_R)
+		end
 	end
 end
 
