@@ -3,7 +3,7 @@ require "Prodiction"
 if myHero.charName ~= "Orianna" or not VIP_USER then return end
 
 local ballPos = myHero
-local version = 0.1
+local version = 1.1
 enemyHealth = {}
 
 local InterruptList = 
@@ -68,6 +68,7 @@ function OnLoad()
 		Menu.Block:addParam("Interrupt", "Interrupt spells", SCRIPT_PARAM_ONOFF, true)
 
 		Menu:addSubMenu("Misc", "Misc")
+		Menu.Misc:addParam("packets", "Use packets", SCRIPT_PARAM_ONOFF, true)
 		Menu.Misc:addParam("rKill", "Kill enemy with ultimate if its possible", SCRIPT_PARAM_ONOFF, false)
 		Menu.Misc:addParam("autolvl", "Auto lvl", SCRIPT_PARAM_ONOFF, true)
 		Menu.Misc:addParam("autoMax", "Skill order:", SCRIPT_PARAM_LIST, 2, { "R>Q>W>E", "R>W>Q>E"})
@@ -118,21 +119,28 @@ if Menu.Combo.UseQ and myHero:CanUseSpell(_Q) == READY and myHero:GetSpellData(_
 
 	local Qpos, info = Prodiction.GetLineAOEPrediction(ts.target, Qrange, BallSpeed, Qdelay, Qradius, ballPos)
 		if Qpos then
-			 CastSpell(_Q, Qpos.x, Qpos.z)
+			--Packet("S_CAST", {spellId = _Q,  Qpos.x, Qpos.z, ballPos.x, ballPos.z, targetNetworkId = ts.networkID}):send()
+			CastSpell(_Q, Qpos.x, Qpos.z)
 	    end
 end
 
 if Menu.Combo.UseW1 and myHero:CanUseSpell(_W) == READY and myHero:GetSpellData(_W).level > 0 then
 		if checkEnemiesHitWithW() >= Menu.Combo.UseW then
-			CastSpell(_W)
-			--Packet('S_CAST', {spellId = _W}):send()
+			if Menu.Misc.packets then
+				Packet('S_CAST', {spellId = _W}):send()
+			else
+				CastSpell(_W)
+			end
 	    end
 end
 
 if Menu.Combo.UseR and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
 		if checkEnemiesHitWithR() >= Menu.Combo.UseR then
-			--Packet('S_CAST', {spellId = _R}):send()
-			CastSpell(_R)
+			if Menu.Misc.packets then
+				Packet('S_CAST', {spellId = _R}):send()
+			else
+				CastSpell(_R)
+			end
 	    end
 end
 if Menu.E.UseE and myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
@@ -166,10 +174,10 @@ for i, enemy in ipairs(GetEnemyHeroes()) do
 		local position, info = Prodiction.GetCircularAOEPrediction(enemy, 0, math.huge, Rdelay, Rradius, ballPos)
 		local toSlow, pos, info = Prodiction.IsToSlow(enemy, 0, math.huge, Rdelay, Rradius, ballPos)
 
-		if not dashing and ValidTarget(enemy) and GetDistance(position, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow then
+		if not dashing and ValidTarget(enemy) and GetDistance(position, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow and GetDistance(pos, ballPos) <= Rradius then
 				table.insert(enemies, enemy)
 				table.insert(enemyHealth, enemy)
-		elseif dashing and ValidTarget(enemy) and GetDistance(dashPos, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow then
+		elseif dashing and ValidTarget(enemy) and GetDistance(dashPos, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow and GetDistance(pos, ballPos) <= Rradius then
 				table.insert(enemies, enemy)
 				table.insert(enemyHealth, enemy)
 		end
@@ -198,11 +206,10 @@ return #enemies2
 end
 
 function OnSendPacket(p)
-	local packet = Packet(p)
-
 	if Menu.Block.Block and p.header == Packet.headers.S_CAST then
+		local packet = Packet(p)
 		if packet:get('spellId') == _R then
-			if checkEnemiesGetWithR() then
+			if checkEnemiesHitWithR() == 0 then
 				p:Block()
 			end
 		end
@@ -270,8 +277,11 @@ function Interrupt ()
 				if GetDistance(unit) <= Qrange and LastChampionSpell[unit.networkID] and spell == LastChampionSpell[unit.networkID].name and (os.clock() - LastChampionSpell[unit.networkID].time < 1) then
 					CastSpell(_Q, unit.x, unit.z)
 					if GetDistance(ballPos, unit) < Rradius then
-						--Packet('S_CAST', {spellId = _R}):send()
-						CastSpell(_R)
+						if Menu.Misc.packets then
+							Packet('S_CAST', {spellId = _R}):send()
+						else
+							CastSpell(_R)
+						end
 					end
 				end
 			end
