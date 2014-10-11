@@ -3,6 +3,7 @@ require "Prodiction"
 if myHero.charName ~= "Orianna" or not VIP_USER then return end
 
 local ballPos = myHero
+local version = 0.1
 enemyHealth = {}
 
 local InterruptList = 
@@ -79,6 +80,7 @@ function OnLoad()
 		Menu.Drawing:addParam("Rrange", "Draw R radius", SCRIPT_PARAM_ONOFF, false)
 		Menu.Drawing:addParam("comboDmg", "Draw Combo damage", SCRIPT_PARAM_ONOFF, true)
 
+		Menu:addParam("Version", "Version", SCRIPT_PARAM_INFO, version)
 end
 
 function OnGainBuff(unit, buff)
@@ -200,7 +202,7 @@ function OnSendPacket(p)
 
 	if Menu.Block.Block and p.header == Packet.headers.S_CAST then
 		if packet:get('spellId') == _R then
-			if checkEnemiesGetWithR() < 1 then
+			if checkEnemiesGetWithR() then
 				p:Block()
 			end
 		end
@@ -221,8 +223,7 @@ if Menu.Drawing.Erange then
 	DrawCircle(myHero.x, myHero.y, myHero.z, Erange, ARGB(255, 0, 255, 0))
 end
 if ts.target ~= nil and Menu.Drawing.comboDmg then
-	DrawIndicator(ts.target, math.floor(comboDamage(ts.target)))
-	DrawOnHPBar(ts.target, math.floor(comboDamage(ts.target)))
+	DrawOnHPBar(ts.target)
 end
 end
 
@@ -277,14 +278,14 @@ function Interrupt ()
 		end
 end
 
-function GetDamageR(spell, target)
+function GetDamage(spell, target)
 	local damage = 0
 	if spell == _R then
 		damage = myHero:CalcMagicDamage(target, Rdamage[myHero:GetSpellData(_R).level] + myHero.ap * 0.7)
 	elseif spell == _Q then
-		damage = myHero:CalcMagicDamage(target, Rdamage[myHero:GetSpellData(_Q).level] + myHero.ap * 0.5)
+		damage = myHero:CalcMagicDamage(target, Qdamage[myHero:GetSpellData(_Q).level] + myHero.ap * 0.5)
 	elseif spell == _W then
-		damage = myHero:CalcMagicDamage(target, Rdamage[myHero:GetSpellData(_W).level] + myHero.ap * 0.7)
+		damage = myHero:CalcMagicDamage(target, Wdamage[myHero:GetSpellData(_W).level] + myHero.ap * 0.7)
 	end
 	return damage
 end
@@ -292,7 +293,7 @@ end
 function killR ()
 
 for _, enemy in ipairs(enemyHealth) do
-	if enemy.health <= GetDamageR(_R, enemy) then
+	if enemy.health <= GetDamage(_R, enemy) then
 		CastSpell(_R)
 	end
 end
@@ -301,10 +302,15 @@ enemyHealth = {}
 
 end
 
-function comboDamage(target)
+function DrawOnHPBar(unit)
+
 	local tDmg = 0
-	for _, spell in ipairs(Combo) do
-		tDmg = tDmg + GetDamage(spell, target)
+	for _, spell in ipairs(combo) do
+		if myHero:GetSpellData(spell).level > 0 and myHero:CanUseSpell(spell) == READY then
+			tDmg = tDmg + GetDamage(spell, unit)
+		end
 	end
-	return target.health - tDmg
+
+	local Pos = GetUnitHPBarPos(unit)
+	DrawText("HP: "..math.floor(unit.health - tDmg),13, Pos.x, Pos.y, ARGB(255, 0, 255, 0))
 end
