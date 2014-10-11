@@ -322,5 +322,9 @@ function DrawOnHPBar(unit)
 	end
 
 	local Pos = GetUnitHPBarPos(unit)
-	DrawText("HP: "..math.floor(unit.health - tDmg),13, Pos.x, Pos.y, ARGB(255, 0, 255, 0))
+	if math.floor(unit.health - tDmg) <= 0 then
+		DrawText("HP: Killable",13, Pos.x, Pos.y, ARGB(255, 0, 255, 0))
+	else
+		DrawText("HP: "..math.floor(unit.health - tDmg),13, Pos.x, Pos.y, ARGB(255, 0, 255, 0))
+	end
 end
