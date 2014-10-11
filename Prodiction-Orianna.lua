@@ -200,10 +200,10 @@ for i, enemy in ipairs(GetEnemyHeroes()) do
 		local position, info2 = Prodiction.GetCircularAOEPrediction(enemy, 0, math.huge, Rdelay, Rradius, ballPos)
 		local toSlow, pos, info2 = Prodiction.IsToSlow(enemy, 0, math.huge, Rdelay, Rradius, ballPos)
 
-		if not dashing and info2.hitchance >= 2 and ValidTarget(enemy) and GetDistance(position, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow and GetDistance(pos, ballPos) <= Rradius then
+		if not dashing and ValidTarget(enemy) and GetDistance(position, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow and GetDistance(pos, ballPos) <= Rradius then
 				table.insert(enemies, enemy)
 				table.insert(enemyHealth, enemy)
-		elseif dashing and info1.hitchance >= 2 and ValidTarget(enemy) and GetDistance(dashPos, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow and GetDistance(pos, ballPos) <= Rradius then
+		elseif dashing and ValidTarget(enemy) and GetDistance(dashPos, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow and GetDistance(pos, ballPos) <= Rradius then
 				table.insert(enemies, enemy)
 				table.insert(enemyHealth, enemy)
 		end
