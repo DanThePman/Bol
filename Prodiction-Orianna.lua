@@ -48,7 +48,7 @@ local LastChampionSpell = {}
 
 function OnLoad()
 
-	PrintChat("Prodiction-Orianna loaded - Prodiction v" .. Prodiction.GetVersion() .. " loaded")
+	PrintChat("Prodiction-Orianna v" .. version .. " loaded - Prodiction v" .. Prodiction.GetVersion() .. " loaded")
 	Menu = scriptConfig("Orianna", "Orianna")
 
 		Menu:addSubMenu("Combo", "Combo")
