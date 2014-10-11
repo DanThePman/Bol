@@ -123,7 +123,7 @@ if Menu.Combo.Enabled then
 if Menu.Combo.UseQ and myHero:CanUseSpell(_Q) == READY and myHero:GetSpellData(_Q).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
 
 	local Qpos, info = Prodiction.GetLineAOEPrediction(ts.target, Qrange, BallSpeed, Qdelay, Qradius, ballPos)
-		if Qpos then
+		if Qpos and info.hitchance >= 1 then
 			--Packet("S_CAST", {spellId = _Q,  Qpos.x, Qpos.z, ballPos.x, ballPos.z, targetNetworkId = ts.networkID}):send()
 			CastSpell(_Q, Qpos.x, Qpos.z)
 	    end
@@ -165,7 +165,7 @@ if Menu.Harass.harassKeyDown or Menu.Harass.harassKeyToggle then
 if Menu.Combo.UseQ and myHero:CanUseSpell(_Q) == READY and myHero:GetSpellData(_Q).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
 
 	local Qpos, info = Prodiction.GetLineAOEPrediction(ts.target, Qrange, BallSpeed, Qdelay, Qradius, ballPos)
-		if Qpos then
+		if Qpos and info.hitchance >= 1 then
 			--Packet("S_CAST", {spellId = _Q,  Qpos.x, Qpos.z, ballPos.x, ballPos.z, targetNetworkId = ts.networkID}):send()
 			CastSpell(_Q, Qpos.x, Qpos.z)
 	    end
@@ -196,14 +196,14 @@ enemyHealth = {}
 
 for i, enemy in ipairs(GetEnemyHeroes()) do
 
-		local dashing, dashPos, info = Prodiction.IsDashing(enemy, 0, math.huge, Rdelay, Rradius, ballPos)
-		local position, info = Prodiction.GetCircularAOEPrediction(enemy, 0, math.huge, Rdelay, Rradius, ballPos)
-		local toSlow, pos, info = Prodiction.IsToSlow(enemy, 0, math.huge, Rdelay, Rradius, ballPos)
+		local dashing, dashPos, info1 = Prodiction.IsDashing(enemy, 0, math.huge, Rdelay, Rradius, ballPos)
+		local position, info2 = Prodiction.GetCircularAOEPrediction(enemy, 0, math.huge, Rdelay, Rradius, ballPos)
+		local toSlow, pos, info2 = Prodiction.IsToSlow(enemy, 0, math.huge, Rdelay, Rradius, ballPos)
 
-		if not dashing and ValidTarget(enemy) and GetDistance(position, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow and GetDistance(pos, ballPos) <= Rradius then
+		if not dashing and info2.hitchance >= 3 and ValidTarget(enemy) and GetDistance(position, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow and GetDistance(pos, ballPos) <= Rradius then
 				table.insert(enemies, enemy)
 				table.insert(enemyHealth, enemy)
-		elseif dashing and ValidTarget(enemy) and GetDistance(dashPos, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow and GetDistance(pos, ballPos) <= Rradius then
+		elseif dashing and info1.hitchance >= 3 and ValidTarget(enemy) and GetDistance(dashPos, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow and GetDistance(pos, ballPos) <= Rradius then
 				table.insert(enemies, enemy)
 				table.insert(enemyHealth, enemy)
 		end
@@ -218,8 +218,8 @@ function checkEnemiesHitWithW()
 enemies2 = {}
 
 for i, enemy in ipairs(GetEnemyHeroes()) do
-	    local dashing, dashPos, info = Prodiction.IsDashing(enemy, 0, math.huge, Wdelay, Wradius, ballPos)
-		local position, info = Prodiction.GetCircularAOEPrediction(enemy, 0, math.huge, Wdelay, Wradius, ballPos)
+	    local dashing, dashPos, info1 = Prodiction.IsDashing(enemy, 0, math.huge, Wdelay, Wradius, ballPos)
+		local position, info2 = Prodiction.GetCircularAOEPrediction(enemy, 0, math.huge, Wdelay, Wradius, ballPos)
 		if not dashing and ValidTarget(enemy) and GetDistance(position, ballPos) <= Wradius and GetDistance(enemy.visionPos, ballPos) <= Wradius then
 			table.insert(enemies2, enemy)
 		elseif dashing and ValidTarget(enemy) and GetDistance(dashPos, ballPos) <= Wradius and GetDistance(enemy.visionPos, ballPos) <= Wradius then
