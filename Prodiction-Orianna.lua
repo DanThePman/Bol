@@ -135,7 +135,7 @@ end
 if Menu.Combo.UseQ and myHero:CanUseSpell(_Q) == READY and myHero:GetSpellData(_Q).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
 
 	local Qpos, info = Prodiction.GetLineAOEPrediction(ts.target, Qrange, BallSpeed, Qdelay, Qradius, ballPos)
-		if Qpos then
+		if Qpos and info.hitchance >= 1 then
 			--Packet("S_CAST", {spellId = _Q,  Qpos.x, Qpos.z, ballPos.x, ballPos.z, targetNetworkId = ts.networkID}):send()
 			CastSpell(_Q, Qpos.x, Qpos.z)
 	    end
