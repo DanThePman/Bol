@@ -109,7 +109,7 @@ function OnCreateObj(obj)
         
         if obj and obj.name:lower():find("orianna_ball_flash_reverse") then
             	ballPos = myHero
-            	qCasted = true
+            	qCasted = false
             	qCastedCheck = true
         end
 end
@@ -127,10 +127,6 @@ if Menu.Misc.autolvl then
 end
 
 if Menu.Combo.Enabled then
-
-if Menu.Misc.rKill and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) and checkEnemiesHitWithR() >= 1 then
-	killR()
-end
 
 if Menu.Combo.UseQ and myHero:CanUseSpell(_Q) == READY and myHero:GetSpellData(_Q).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
 
@@ -161,9 +157,15 @@ if Menu.Misc.UseR1 and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_
 			end
 	    end
 end
+
+if Menu.Misc.rKill and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) and checkEnemiesHitWithR() >= 1 then
+	killR()
+end
+
 if Menu.Combo.UseE and wCasted and qCasted and qCastedCheck and myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
 		CastE()
 end
+
 if Menu.Block.Interrupt and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
 		Interrupt()
 end
