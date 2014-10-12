@@ -345,7 +345,7 @@ end
 function killR ()
 
 for _, enemy in ipairs(enemyHealth) do
-		local dmg = GetDamage(_R, enemy) + myHero.Ad
+		local dmg = GetDamage(_R, enemy)
 
 		if myHero:CanUseSpell(_Q) == READY then
 			dmg = dmg + GetDamage(_Q, enemy)
