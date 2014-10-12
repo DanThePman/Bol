@@ -352,7 +352,7 @@ for _, enemy in ipairs(enemyHealth) do
 		if myHero:CanUseSpell(_Q) == READY then
 			dmg = dmg + GetDamage(_Q, enemy)
 		end
-			if enemy.health < dmg then
+			if not enemy.dead and enemy.health < dmg then
 				if Menu.Misc.packets then
 					Packet('S_CAST', {spellId = _R}):send()
 				else
