@@ -20,6 +20,9 @@ local Qradius = 80
 local Wradius = 245
 local Eradius = 80
 local Rradius = 380
+local qCasted = false
+local qCastedCheck = false
+local wCasted = false
 
 local Qrange = 825
 local Erange = 1095
@@ -35,16 +38,17 @@ local BallSpeedE = 1700
 levelSequenceQ = {1,2,3,1,1,4,1,2,1,2,4,2,2,3,3,4,3,3}
 levelSequenceW = {1,2,3,2,2,4,2,1,2,1,4,1,1,3,3,4,3,3}
 
-combo = {_Q, _W, _R}
+combo = {_Q, _W, _R , _E}
 
 local Rdamage = {150, 225, 300}
 local Qdamage = {60, 90, 120, 150, 180}
 local Wdamage = {70, 115, 160, 205, 250}
+local Edamage = {60, 90, 120, 150, 180}
 
 
 local LastChampionSpell = {}
 
-	ts = TargetSelector(TARGET_LESS_CAST_PRIORITY, 1200)
+	ts = TargetSelector(TARGET_LESS_CAST_PRIORITY, 1500)
 
 function OnLoad()
 
@@ -99,10 +103,14 @@ function OnCreateObj(obj)
 
         if obj and obj.name:lower():find("yomu_ring_green") then
                 ballPos = obj
+            		qCasted = true
+            		qCastedCheck = true
         end
         
         if obj and obj.name:lower():find("orianna_ball_flash_reverse") then
             	ballPos = myHero
+            	qCasted = true
+            	qCastedCheck = true
         end
 end
 
@@ -120,10 +128,14 @@ end
 
 if Menu.Combo.Enabled then
 
+if Menu.Misc.rKill and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) and checkEnemiesHitWithR() >= 1 then
+	killR()
+end
+
 if Menu.Combo.UseQ and myHero:CanUseSpell(_Q) == READY and myHero:GetSpellData(_Q).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
 
 	local Qpos, info = Prodiction.GetLineAOEPrediction(ts.target, Qrange, BallSpeed, Qdelay, Qradius, ballPos)
-		if Qpos and info.hitchance >= 1 then
+		if Qpos then
 			--Packet("S_CAST", {spellId = _Q,  Qpos.x, Qpos.z, ballPos.x, ballPos.z, targetNetworkId = ts.networkID}):send()
 			CastSpell(_Q, Qpos.x, Qpos.z)
 	    end
@@ -137,6 +149,7 @@ if Menu.Combo.UseW1 and myHero:CanUseSpell(_W) == READY and myHero:GetSpellData(
 				CastSpell(_W)
 			end
 	    end
+	    wCasted = true
 end
 
 if Menu.Misc.UseR1 and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
@@ -148,14 +161,11 @@ if Menu.Misc.UseR1 and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_
 			end
 	    end
 end
-if Menu.Combo.UseE and myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
+if Menu.Combo.UseE and wCasted and qCasted and qCastedCheck and myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
 		CastE()
 end
 if Menu.Block.Interrupt and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
 		Interrupt()
-end
-if Menu.Misc.rKill and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) and checkEnemiesHitWithR() >= 1 then
-	killR()
 end
 
 end -- enabled
@@ -165,7 +175,7 @@ if Menu.Harass.harassKeyDown or Menu.Harass.harassKeyToggle then
 if Menu.Combo.UseQ and myHero:CanUseSpell(_Q) == READY and myHero:GetSpellData(_Q).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
 
 	local Qpos, info = Prodiction.GetLineAOEPrediction(ts.target, Qrange, BallSpeed, Qdelay, Qradius, ballPos)
-		if Qpos and info.hitchance >= 1 then
+		if Qpos then
 			--Packet("S_CAST", {spellId = _Q,  Qpos.x, Qpos.z, ballPos.x, ballPos.z, targetNetworkId = ts.networkID}):send()
 			CastSpell(_Q, Qpos.x, Qpos.z)
 	    end
@@ -176,6 +186,7 @@ if myHero:CanUseSpell(_W) == READY and myHero:GetSpellData(_W).level > 0 and che
 		Packet('S_CAST', {spellId = _W}):send()
 	else
 		CastSpell(_W)
+		wCasted = true
 	end
 end
 
@@ -295,6 +306,9 @@ function CastE()
 	end
 
 	CastSpell(_E, allyToShield)
+	qCasted = false
+	qCastedCheck = false
+	wCasted = false
 end
 
 function Interrupt ()
@@ -322,6 +336,8 @@ function GetDamage(spell, target)
 		damage = myHero:CalcMagicDamage(target, Qdamage[myHero:GetSpellData(_Q).level] + myHero.ap * 0.5)
 	elseif spell == _W then
 		damage = myHero:CalcMagicDamage(target, Wdamage[myHero:GetSpellData(_W).level] + myHero.ap * 0.7)
+	elseif spell == _E then
+		damage = myHero:CalcMagicDamage(target, Wdamage[myHero:GetSpellData(_E).level] + myHero.ap * 0.3)
 	end
 	return damage
 end
@@ -329,13 +345,18 @@ end
 function killR ()
 
 for _, enemy in ipairs(enemyHealth) do
-	if enemy.health <= GetDamage(_R, enemy) then
-		if Menu.Misc.packets then
-			Packet('S_CAST', {spellId = _R}):send()
-		else
-			CastSpell(_R)
+		local dmg = GetDamage(_R, enemy) + myHero.Ad
+
+		if myHero:CanUseSpell(_Q) == READY then
+			dmg = dmg + GetDamage(_Q, enemy)
 		end
-	end
+			if enemy.health < dmg then
+				if Menu.Misc.packets then
+					Packet('S_CAST', {spellId = _R}):send()
+				else
+					CastSpell(_R)
+				end
+			end
 end
 
 enemyHealth = {}
