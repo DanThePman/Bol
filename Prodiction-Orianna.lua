@@ -248,9 +248,9 @@ enemies2 = {}
 	for i, enemy in ipairs(GetEnemyHeroes()) do
 	    local dashing, dashPos, info1 = Prodiction.IsDashing(enemy, 0, math.huge, Wdelay, Wradius, ballPos)
 		local position, info2 = Prodiction.GetCircularAOEPrediction(enemy, 0, math.huge, Wdelay, Wradius, ballPos)
-		if not dashing and ValidTarget(enemy) and GetDistance(position, ballPos) <= Wradius and GetDistance(enemy.visionPos, ballPos) <= Wradius then
+		if not dashing and ValidTarget(enemy) and GetDistance(position, ballPos) <= Wradius - 45 and GetDistance(enemy.visionPos, ballPos) <= Wradius - 45 then
 			table.insert(enemies2, enemy)
-		elseif dashing and ValidTarget(enemy) and GetDistance(dashPos, ballPos) <= Wradius and GetDistance(enemy.visionPos, ballPos) <= Wradius then
+		elseif dashing and ValidTarget(enemy) and GetDistance(dashPos, ballPos) <= Wradius - 45 and GetDistance(enemy.visionPos, ballPos) <= Wradius - 45 then
 			table.insert(enemies2, enemy)
 		end
 	end
