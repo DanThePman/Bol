@@ -478,7 +478,6 @@ if #points >= Menu.TeamFightLogic.UseRtoInitCount then
 			else
 
 				if circle.radius <= Rradius then
-					if not Menu.TeamFightLogic.tfForce and checkEnemiesHitWithR(Point(circle.center.x, circle.center.z), ballSpeed, Qrange, Qdelay) >= Menu.TeamFightLogic.UseRtoInitCount then
 						CastSpell(_Q, circle.center.x, circle.center.z)
 						if Menu.Misc.packets then
 							Packet('S_CAST', {spellId = _R}):send()
@@ -488,17 +487,6 @@ if #points >= Menu.TeamFightLogic.UseRtoInitCount then
 						if myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil then
 							CastE()
 						end
-					elseif Menu.TeamFightLogic.tfForce then
-						CastSpell(_Q, circle.center.x, circle.center.z)
-						if Menu.Misc.packets then
-							Packet('S_CAST', {spellId = _R}):send()
-						else
-							CastSpell(_R)
-						end
-						if myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil then
-							CastE()
-						end
-					end
 					break
 				end
 			end
