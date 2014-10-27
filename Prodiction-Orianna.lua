@@ -88,7 +88,6 @@ function OnLoad()
 		Menu.TeamFightLogic:addParam("tfKeyDown", "Initiate team fights with Q -> Ultimate", SCRIPT_PARAM_ONKEYDOWN , false, 192)
 		Menu.TeamFightLogic:addParam("tfKeyToggle", "(TOGGLE)", SCRIPT_PARAM_ONKEYTOGGLE, false, 192)
 		Menu.TeamFightLogic:addParam("UseRtoInitCount", "Use Ultimate if it will hit at least", SCRIPT_PARAM_SLICE, 3, 1, 5)
-		Menu.TeamFightLogic:addParam("tfForce", "Exact calculation", SCRIPT_PARAM_ONKEYTOGGLE, false, 192)
 
 		Menu:addSubMenu("Drawing", "Drawing")
 		Menu.Drawing:addParam("AArange", "Draw AA range", SCRIPT_PARAM_ONOFF, false)
