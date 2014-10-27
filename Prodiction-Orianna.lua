@@ -13,7 +13,8 @@ local InterruptList =
 	  ["Warwick"] = "InfiniteDuress",
 	  ["Velkoz"] = "VelkozR",
 	  ["MissFortune"] = "MissFortuneR", --not working
-	  ["Caitlyn"] = "CaitlynR" -- not working
+	  ["Caitlyn"] = "CaitlynR", -- not working
+	  ["Fiddlesticks"] = "Crowstorm"
 	}
 
 local Qradius = 80
@@ -22,7 +23,6 @@ local Eradius = 80
 local Rradius = 380
 local qCasted = false
 local qCastedCheck = false
-local wCasted = false
 
 local Qrange = 825
 local Erange = 1095
@@ -44,6 +44,8 @@ local Rdamage = {150, 225, 300}
 local Qdamage = {60, 90, 120, 150, 180}
 local Wdamage = {70, 115, 160, 205, 250}
 local Edamage = {60, 90, 120, 150, 180}
+
+local enemyMinions = nil
 
 
 local LastChampionSpell = {}
@@ -76,14 +78,20 @@ function OnLoad()
 
 		Menu:addSubMenu("Misc", "Misc")
 		Menu.Misc:addParam("packets", "Use packets", SCRIPT_PARAM_ONOFF, true)
-		Menu.Misc:addParam("UseW", "Use W if it will hit at least", SCRIPT_PARAM_SLICE, 1, 1, 5)
-		Menu.Misc:addParam("UseR", "Use R if it will hit at least", SCRIPT_PARAM_SLICE, 3, 1, 5)
+		Menu.Misc:addParam("UseW", "Use W in Combo if it will hit at least", SCRIPT_PARAM_SLICE, 1, 1, 5)
+		Menu.Misc:addParam("UseR", "Use R in Combo if it will hit at least", SCRIPT_PARAM_SLICE, 3, 1, 5)
 		Menu.Misc:addParam("rKill", "Kill enemy with ultimate if its possible", SCRIPT_PARAM_ONOFF, false)
 		Menu.Misc:addParam("autolvl", "Auto lvl", SCRIPT_PARAM_ONOFF, true)
 		Menu.Misc:addParam("autoMax", "Skill order:", SCRIPT_PARAM_LIST, 2, { "R>Q>W>E", "R>W>Q>E"})
-		--Menu.Misc:addParam("manaManagerE", "Dont use E if Mana is under (in %)", SCRIPT_PARAM_SLICE, 0.3, 0, 1)
+
+		Menu:addSubMenu("TeamFightLogic", "TeamFightLogic")
+		Menu.TeamFightLogic:addParam("tfKeyDown", "Initiate team fights with Q -> Ultimate", SCRIPT_PARAM_ONKEYDOWN , false, 192)
+		Menu.TeamFightLogic:addParam("tfKeyToggle", "(TOGGLE)", SCRIPT_PARAM_ONKEYTOGGLE, false, 192)
+		Menu.TeamFightLogic:addParam("UseRtoInitCount", "Use Ultimate if it will hit at least", SCRIPT_PARAM_SLICE, 3, 1, 5)
+		Menu.TeamFightLogic:addParam("tfForce", "Exact calculation", SCRIPT_PARAM_ONKEYTOGGLE, false, 192)
 
 		Menu:addSubMenu("Drawing", "Drawing")
+		Menu.Drawing:addParam("AArange", "Draw AA range", SCRIPT_PARAM_ONOFF, false)
 		Menu.Drawing:addParam("Qrange", "Draw Q range", SCRIPT_PARAM_ONOFF, true)
 		Menu.Drawing:addParam("Wrange", "Draw W radius", SCRIPT_PARAM_ONOFF, false)
 		Menu.Drawing:addParam("Erange", "Draw E range", SCRIPT_PARAM_ONOFF, false)
@@ -100,7 +108,6 @@ function OnGainBuff(unit, buff)
 end
 
 function OnCreateObj(obj)
-
         if obj and obj.name:lower():find("yomu_ring_green") then
                 ballPos = obj
             		qCasted = true
@@ -126,6 +133,28 @@ if Menu.Misc.autolvl then
 	end
 end
 
+if Menu.Misc.UseR1 and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
+		if checkEnemiesHitWithR(ballPos) >= Menu.Misc.UseR then
+			if Menu.Misc.packets then
+				Packet('S_CAST', {spellId = _R}):send()
+			else
+				CastSpell(_R)
+			end
+	    end
+end
+
+if Menu.Misc.rKill and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) and checkEnemiesHitWithR(ballPos) >= 1 then
+	killR()
+end
+
+if Menu.Block.Interrupt and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
+		Interrupt()
+end
+
+if Menu.TeamFightLogic.tfKeyDown or Menu.TeamFightLogic.tfKeyToggle and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 then
+	TF_Calc()
+end
+
 if Menu.Combo.Enabled then
 
 if Menu.Combo.UseQ and myHero:CanUseSpell(_Q) == READY and myHero:GetSpellData(_Q).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
@@ -147,28 +176,8 @@ if Menu.Combo.UseW1 and myHero:CanUseSpell(_W) == READY and myHero:GetSpellData(
 	    end
 end
 
-wCasted = true
-
-if Menu.Misc.UseR1 and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
-		if checkEnemiesHitWithR() >= Menu.Misc.UseR then
-			if Menu.Misc.packets then
-				Packet('S_CAST', {spellId = _R}):send()
-			else
-				CastSpell(_R)
-			end
-	    end
-end
-
-if Menu.Misc.rKill and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) and checkEnemiesHitWithR() >= 1 then
-	killR()
-end
-
-if Menu.Combo.UseE and wCasted and qCasted and qCastedCheck and myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
+if Menu.Combo.UseE and qCasted and qCastedCheck and myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil then
 		CastE()
-end
-
-if Menu.Block.Interrupt and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
-		Interrupt()
 end
 
 end -- enabled
@@ -203,21 +212,26 @@ function OnProcessSpell(unit, spell)
 	end
 end
 
-function checkEnemiesHitWithR()
+function checkEnemiesHitWithR(ballPosPoint, XTRAspeed, XTRArange, XTRAdelay)
 
 enemies = {}
 enemyHealth = {}
 
+if XTRArange ~= nil and XTRAspeed == nil then return 0 end
+if XTRAspeed == nil then XTRAspeed = math.huge end
+if XTRAdelay == nil then XTRAdelay = 0 end
+if XTRArange == nil then XTRArange = 0 end
+
 for i, enemy in ipairs(GetEnemyHeroes()) do
 
-		local dashing, dashPos, info1 = Prodiction.IsDashing(enemy, 0, math.huge, Rdelay, Rradius, ballPos)
-		local position, info2 = Prodiction.GetCircularAOEPrediction(enemy, 0, math.huge, Rdelay, Rradius, ballPos)
-		local toSlow, pos, info2 = Prodiction.IsToSlow(enemy, 0, math.huge, Rdelay, Rradius, ballPos)
+		local dashing, dashPos, info1 = Prodiction.IsDashing(enemy, XTRArange, XTRAspeed, Rdelay + XTRAdelay, Rradius, ballPosPoint)
+		local position, info2 = Prodiction.GetCircularAOEPrediction(enemy, XTRArange, XTRAspeed, Rdelay + XTRAdelay, Rradius, ballPosPoint)
+		local toSlow, pos, info2 = Prodiction.IsToSlow(enemy, XTRArange, XTRAspeed, Rdelay + XTRAdelay, Rradius, ballPosPoint)
 
-		if not dashing and ValidTarget(enemy) and GetDistance(position, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow and GetDistance(pos, ballPos) <= Rradius then
+		if not dashing and ValidTarget(enemy) and GetDistance(position, ballPosPoint) <= Rradius and GetDistance(enemy.visionPos, ballPosPoint) <= Rradius and toSlow and GetDistance(pos, ballPosPoint) <= Rradius then
 				table.insert(enemies, enemy)
 				table.insert(enemyHealth, enemy)
-		elseif dashing and ValidTarget(enemy) and GetDistance(dashPos, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow and GetDistance(pos, ballPos) <= Rradius then
+		elseif dashing and ValidTarget(enemy) and GetDistance(dashPos, ballPosPoint) <= Rradius and GetDistance(enemy.visionPos, ballPosPoint) <= Rradius and toSlow and GetDistance(pos, ballPosPoint) <= Rradius then
 				table.insert(enemies, enemy)
 				table.insert(enemyHealth, enemy)
 		end
@@ -231,7 +245,7 @@ function checkEnemiesHitWithW()
 
 enemies2 = {}
 
-for i, enemy in ipairs(GetEnemyHeroes()) do
+	for i, enemy in ipairs(GetEnemyHeroes()) do
 	    local dashing, dashPos, info1 = Prodiction.IsDashing(enemy, 0, math.huge, Wdelay, Wradius, ballPos)
 		local position, info2 = Prodiction.GetCircularAOEPrediction(enemy, 0, math.huge, Wdelay, Wradius, ballPos)
 		if not dashing and ValidTarget(enemy) and GetDistance(position, ballPos) <= Wradius and GetDistance(enemy.visionPos, ballPos) <= Wradius then
@@ -239,7 +253,7 @@ for i, enemy in ipairs(GetEnemyHeroes()) do
 		elseif dashing and ValidTarget(enemy) and GetDistance(dashPos, ballPos) <= Wradius and GetDistance(enemy.visionPos, ballPos) <= Wradius then
 			table.insert(enemies2, enemy)
 		end
-end
+	end
 
 return #enemies2
 
@@ -249,7 +263,7 @@ function OnSendPacket(p)
 	if Menu.Block.Block and p.header == Packet.headers.S_CAST then
 		local packet = Packet(p)
 		if packet:get('spellId') == _R then
-			if checkEnemiesHitWithR() == 0 then
+			if checkEnemiesHitWithR(ballPos) == 0 then
 				p:Block()
 			end
 		end
@@ -257,6 +271,10 @@ function OnSendPacket(p)
 end
 
 function OnDraw()
+
+if Menu.Drawing.AArange then
+	DrawCircle(myHero.x, myHero.y, myHero.z, 550 + ((Qrange - 550) / 2), ARGB(255, 0, 255, 0))
+end
 if Menu.Drawing.Qrange then
 	DrawCircle(myHero.x, myHero.y, myHero.z, Qrange, ARGB(255, 0, 255, 0))
 end
@@ -312,6 +330,7 @@ function CastE()
 	qCasted = false
 	qCastedCheck = false
 	wCasted = false
+	ballPos = allyToShield
 end
 
 function Interrupt ()
@@ -397,4 +416,96 @@ function DrawOnHPBar(unit)
 	else
 		DrawText("HP: "..math.floor(unit.health - tDmg),13, Pos.x, Pos.y, ARGB(255, 0, 255, 0))
 	end
+end
+
+function TF_Calc ()
+
+points = {}
+local circle = nil
+
+for i, enemy in ipairs(GetEnemyHeroes()) do
+	if ValidTarget(enemy) then
+		local Position, HitChance = Prodiction.GetCircularAOEPrediction(enemy, Qrange, BallSpeed, Qdelay + Rdelay, Rradius, ballPos)
+		local Dashing, DashPosition, DashHitChance = Prodiction.IsDashing(enemy, Qrange, BallSpeed, Qdelay + Rdelay, Rradius, ballPos)
+
+			if not Dashing and GetDistance(myHero, Position) <= Qrange + Rradius then
+				table.insert(points, Position)
+			elseif Dashing and GetDistance(myHero, DashPosition) <= Qrange + Rradius then
+				table.insert(points, DashPosition)
+			end
+	end
+end
+
+if #points >= Menu.TeamFightLogic.UseRtoInitCount then
+
+	circle = MEC(points)
+	circle = circle:Compute()
+
+	if circle.radius <= Rradius then
+		if not Menu.TeamFightLogic.tfForce and checkEnemiesHitWithR(Point(circle.center.x, circle.center.z), ballSpeed, Qrange, Qdelay) >= Menu.TeamFightLogic.UseRtoInitCount then
+			CastSpell(_Q, circle.center.x, circle.center.z)
+			if Menu.Misc.packets then
+				Packet('S_CAST', {spellId = _R}):send()
+			else
+				CastSpell(_R)
+			end
+			if myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil then
+				CastE()
+			end
+		elseif Menu.TeamFightLogic.tfForce then
+			CastSpell(_Q, circle.center.x, circle.center.z)
+			if Menu.Misc.packets then
+				Packet('S_CAST', {spellId = _R}):send()
+			else
+				CastSpell(_R)
+			end
+			if myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil then
+				CastE()
+			end
+		end
+	else --remove far points
+		local index = 0
+		for _, point in ipairs(points) do
+			if GetDistance(point, circle.center) > Rradius then
+				table.remove(points, index)
+			end
+
+			circle = MEC(points)
+			circle = circle:Compute()
+
+			if #points < Menu.TeamFightLogic.UseRtoInitCount then
+				break
+			else
+
+				if circle.radius <= Rradius then
+					if not Menu.TeamFightLogic.tfForce and checkEnemiesHitWithR(Point(circle.center.x, circle.center.z), ballSpeed, Qrange, Qdelay) >= Menu.TeamFightLogic.UseRtoInitCount then
+						CastSpell(_Q, circle.center.x, circle.center.z)
+						if Menu.Misc.packets then
+							Packet('S_CAST', {spellId = _R}):send()
+						else
+							CastSpell(_R)
+						end
+						if myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil then
+							CastE()
+						end
+					elseif Menu.TeamFightLogic.tfForce then
+						CastSpell(_Q, circle.center.x, circle.center.z)
+						if Menu.Misc.packets then
+							Packet('S_CAST', {spellId = _R}):send()
+						else
+							CastSpell(_R)
+						end
+						if myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil then
+							CastE()
+						end
+					end
+					break
+				end
+			end
+			index = index + 1
+		end
+		index = 0
+	end
+end
+
 end
