@@ -211,21 +211,16 @@ function OnProcessSpell(unit, spell)
 	end
 end
 
-function checkEnemiesHitWithR(ballPosPoint, XTRAspeed, XTRArange, XTRAdelay)
+function checkEnemiesHitWithR(ballPosPoint)
 
 enemies = {}
 enemyHealth = {}
 
-if XTRArange ~= nil and XTRAspeed == nil then return 0 end
-if XTRAspeed == nil then XTRAspeed = math.huge end
-if XTRAdelay == nil then XTRAdelay = 0 end
-if XTRArange == nil then XTRArange = 0 end
-
 for i, enemy in ipairs(GetEnemyHeroes()) do
 
-		local dashing, dashPos, info1 = Prodiction.IsDashing(enemy, XTRArange, XTRAspeed, Rdelay + XTRAdelay, Rradius, ballPosPoint)
-		local position, info2 = Prodiction.GetCircularAOEPrediction(enemy, XTRArange, XTRAspeed, Rdelay + XTRAdelay, Rradius, ballPosPoint)
-		local toSlow, pos, info2 = Prodiction.IsToSlow(enemy, XTRArange, XTRAspeed, Rdelay + XTRAdelay, Rradius, ballPosPoint)
+		local dashing, dashPos, info1 = Prodiction.IsDashing(enemy, 0, math.huge, Rdelay, Rradius, ballPosPoint)
+		local position, info2 = Prodiction.GetCircularAOEPrediction(enemy, 0, math.huge, Rdelay, Rradius, ballPosPoint)
+		local toSlow, pos, info2 = Prodiction.IsToSlow(enemy, 0, math.huge, Rdelay, Rradius, ballPosPoint)
 
 		if not dashing and ValidTarget(enemy) and GetDistance(position, ballPosPoint) <= Rradius and GetDistance(enemy.visionPos, ballPosPoint) <= Rradius and toSlow and GetDistance(pos, ballPosPoint) <= Rradius then
 				table.insert(enemies, enemy)
