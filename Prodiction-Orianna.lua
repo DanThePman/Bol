@@ -18,10 +18,11 @@ local InterruptList =
 	}
 
 local Qradius = 80
-local Wradius = 245
+local Wradius = 240
 local Eradius = 80
 local Rradius = 380
 local qCasted = false
+local wCasted = false
 local qCastedCheck = false
 
 local Qrange = 825
@@ -173,9 +174,10 @@ if Menu.Combo.UseW1 and myHero:CanUseSpell(_W) == READY and myHero:GetSpellData(
 				CastSpell(_W)
 			end
 	    end
+	    wCasted = true
 end
 
-if Menu.Combo.UseE and qCasted and qCastedCheck and myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil then
+if wCasted and Menu.Combo.UseE and qCasted and qCastedCheck and myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil then
 		CastE()
 end
 
@@ -197,8 +199,8 @@ if myHero:CanUseSpell(_W) == READY and myHero:GetSpellData(_W).level > 0 and che
 		Packet('S_CAST', {spellId = _W}):send()
 	else
 		CastSpell(_W)
-		wCasted = true
 	end
+	wCasted = true
 end
 
 end --harass
@@ -242,9 +244,9 @@ enemies2 = {}
 	for i, enemy in ipairs(GetEnemyHeroes()) do
 	    local dashing, dashPos, info1 = Prodiction.IsDashing(enemy, 0, math.huge, Wdelay, Wradius, ballPos)
 		local position, info2 = Prodiction.GetCircularAOEPrediction(enemy, 0, math.huge, Wdelay, Wradius, ballPos)
-		if not dashing and ValidTarget(enemy) and GetDistance(position, ballPos) <= Wradius - 45 and GetDistance(enemy.visionPos, ballPos) <= Wradius - 45 then
+		if not dashing and ValidTarget(enemy) and GetDistance(position, ballPos) <= Wradius and GetDistance(enemy.visionPos, ballPos) <= Wradius then
 			table.insert(enemies2, enemy)
-		elseif dashing and ValidTarget(enemy) and GetDistance(dashPos, ballPos) <= Wradius - 45 and GetDistance(enemy.visionPos, ballPos) <= Wradius - 45 then
+		elseif dashing and ValidTarget(enemy) and GetDistance(dashPos, ballPos) <= Wradius and GetDistance(enemy.visionPos, ballPos) <= Wradius then
 			table.insert(enemies2, enemy)
 		end
 	end
@@ -381,7 +383,7 @@ for _, enemy in ipairs(enemyHealth) do
 					else
 						CastSpell(_R)
 					end
-				elseif dashing and ValidTarget(enemy) and GetDistance(dashPos, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow and GetDistance(pos, ballPos) <= Rradius then
+				elseif dashing and ValidTarget(enemy) and GektDistance(dashPos, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow and GetDistance(pos, ballPos) <= Rradius then
 					if Menu.Misc.packets then
 						Packet('S_CAST', {spellId = _R}):send()
 					else
@@ -437,13 +439,15 @@ if #points >= Menu.TeamFightLogic.UseRtoInitCount then
 
 	if circle.radius <= Rradius then
 			CastSpell(_Q, circle.center.x, circle.center.z)
-			if Menu.Misc.packets then
-				Packet('S_CAST', {spellId = _R}):send()
-			else
-				CastSpell(_R)
-			end
-			if myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil then
-				CastE()
+			if checkEnemiesHitWithR(ballPos) >= #points then
+				if Menu.Misc.packets then
+					Packet('S_CAST', {spellId = _R}):send()
+				else
+					CastSpell(_R)
+				end
+				if myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil then
+					CastE()
+				end
 			end
 	else --remove far points
 		local index = 0
@@ -461,15 +465,17 @@ if #points >= Menu.TeamFightLogic.UseRtoInitCount then
 
 				if circle.radius <= Rradius then
 						CastSpell(_Q, circle.center.x, circle.center.z)
-						if Menu.Misc.packets then
-							Packet('S_CAST', {spellId = _R}):send()
-						else
-							CastSpell(_R)
+						if checkEnemiesHitWithR(ballPos) >= #points then
+							if Menu.Misc.packets then
+								Packet('S_CAST', {spellId = _R}):send()
+							else
+								CastSpell(_R)
+							end
+							if myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil then
+								CastE()
+							end
+							break
 						end
-						if myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil then
-							CastE()
-						end
-					break
 				end
 			end
 			index = index + 1
