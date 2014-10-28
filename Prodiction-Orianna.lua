@@ -18,7 +18,7 @@ local InterruptList =
 	}
 
 local Qradius = 80
-local Wradius = 240
+local Wradius = 245
 local Eradius = 80
 local Rradius = 380
 local qCasted = false
@@ -160,7 +160,7 @@ if Menu.Combo.Enabled then
 if Menu.Combo.UseQ and myHero:CanUseSpell(_Q) == READY and myHero:GetSpellData(_Q).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
 
 	local Qpos, info = Prodiction.GetLineAOEPrediction(ts.target, Qrange, BallSpeed, Qdelay, Qradius, ballPos)
-		if Qpos and info.hitchance >= 1 then
+		if Qpos then
 			--Packet("S_CAST", {spellId = _Q,  Qpos.x, Qpos.z, ballPos.x, ballPos.z, targetNetworkId = ts.networkID}):send()
 			CastSpell(_Q, Qpos.x, Qpos.z)
 	    end
@@ -170,11 +170,12 @@ if Menu.Combo.UseW1 and myHero:CanUseSpell(_W) == READY and myHero:GetSpellData(
 		if checkEnemiesHitWithW() >= Menu.Misc.UseW then
 			if Menu.Misc.packets then
 				Packet('S_CAST', {spellId = _W}):send()
+				wCasted = true
 			else
 				CastSpell(_W)
+				wCasted = true
 			end
 	    end
-	    wCasted = true
 end
 
 if wCasted and Menu.Combo.UseE and qCasted and qCastedCheck and myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil then
@@ -188,7 +189,7 @@ if Menu.Harass.harassKeyDown or Menu.Harass.harassKeyToggle then
 if Menu.Combo.UseQ and myHero:CanUseSpell(_Q) == READY and myHero:GetSpellData(_Q).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
 
 	local Qpos, info = Prodiction.GetLineAOEPrediction(ts.target, Qrange, BallSpeed, Qdelay, Qradius, ballPos)
-		if Qpos and info.hitchance >= 1 then
+		if Qpos then
 			--Packet("S_CAST", {spellId = _Q,  Qpos.x, Qpos.z, ballPos.x, ballPos.z, targetNetworkId = ts.networkID}):send()
 			CastSpell(_Q, Qpos.x, Qpos.z)
 	    end
@@ -197,10 +198,11 @@ end
 if myHero:CanUseSpell(_W) == READY and myHero:GetSpellData(_W).level > 0 and checkEnemiesHitWithW() > 0 then
 	if Menu.Misc.packets then
 		Packet('S_CAST', {spellId = _W}):send()
+		wCasted = true
 	else
 		CastSpell(_W)
+		wCasted = true
 	end
-	wCasted = true
 end
 
 end --harass
@@ -439,7 +441,6 @@ if #points >= Menu.TeamFightLogic.UseRtoInitCount then
 
 	if circle.radius <= Rradius then
 			CastSpell(_Q, circle.center.x, circle.center.z)
-			if checkEnemiesHitWithR(ballPos) >= #points then
 				if Menu.Misc.packets then
 					Packet('S_CAST', {spellId = _R}):send()
 				else
@@ -448,7 +449,6 @@ if #points >= Menu.TeamFightLogic.UseRtoInitCount then
 				if myHero:CanUseSpell(_E) == READY and myHero:GetSpellData(_E).level > 0 and ts.target ~= nil then
 					CastE()
 				end
-			end
 	else --remove far points
 		local index = 0
 		for _, point in ipairs(points) do
@@ -465,7 +465,6 @@ if #points >= Menu.TeamFightLogic.UseRtoInitCount then
 
 				if circle.radius <= Rradius then
 						CastSpell(_Q, circle.center.x, circle.center.z)
-						if checkEnemiesHitWithR(ballPos) >= #points then
 							if Menu.Misc.packets then
 								Packet('S_CAST', {spellId = _R}):send()
 							else
@@ -475,7 +474,6 @@ if #points >= Menu.TeamFightLogic.UseRtoInitCount then
 								CastE()
 							end
 							break
-						end
 				end
 			end
 			index = index + 1
