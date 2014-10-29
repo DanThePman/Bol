@@ -3,7 +3,7 @@ require "Prodiction"
 if myHero.charName ~= "Orianna" or not VIP_USER then return end
 
 local ballPos = myHero
-local version = 1.2
+local version = 1.3
 enemyHealth = {}
 
 local InterruptList = 
