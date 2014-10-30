@@ -29,7 +29,7 @@ end
 if DOWNLOADING_LIBS then return end
 
 local ballPos = myHero
-local version = 1.2
+local version = 1.31
 enemyHealth = {}
 
 local InterruptList = 
