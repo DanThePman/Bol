@@ -71,6 +71,7 @@ local Rdamage = {150, 225, 300}
 local Qdamage = {60, 90, 120, 150, 180}
 local Wdamage = {70, 115, 160, 205, 250}
 local Edamage = {60, 90, 120, 150, 180}
+enemies = {}
 
 local enemyMinions = nil
 
@@ -154,7 +155,7 @@ end
 function OnTick ()
 
 ts:update()
---simpleOrbWalker:ForceTarget(ts.target)
+simpleOrbWalker:ForceTarget(ts.target)
 
 if Menu.Misc.autolvl then
 	if Menu.Misc.autoMax == 1 then
@@ -164,17 +165,17 @@ if Menu.Misc.autolvl then
 	end
 end
 
-if Menu.Misc.UseR1 and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) then
-		if checkEnemiesHitWithR(ballPos) >= Menu.Misc.UseR then
+if Menu.Combo.UseR1 and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil then
+		if checkEnemiesHitWithR() >= Menu.Misc.UseR then
 			if Menu.Misc.packets then
 				Packet('S_CAST', {spellId = _R}):send()
 			else
 				CastSpell(_R)
 			end
-	    end
+		end
 end
 
-if Menu.Misc.rKill and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) and checkEnemiesHitWithR(ballPos) >= 1 then
+if Menu.Misc.rKill and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and ts.target ~= nil and ValidTarget(ts.target) and checkEnemiesHitWithR() >= 1 then
 	killR()
 end
 
@@ -182,7 +183,7 @@ if Menu.Block.Interrupt and myHero:CanUseSpell(_R) == READY and myHero:GetSpellD
 		Interrupt()
 end
 
-if Menu.TeamFightLogic.tfKeyDown or Menu.TeamFightLogic.tfKeyToggle and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 then
+if Menu.TeamFightLogic.tfKeyDown or Menu.TeamFightLogic.tfKeyToggle and myHero:CanUseSpell(_R) == READY and myHero:GetSpellData(_R).level > 0 and myHero:CanUseSpell(_Q) == READY and myHero:GetSpellData(_Q).level > 0 then
 	TF_Calc()
 end
 
@@ -246,23 +247,20 @@ function OnProcessSpell(unit, spell)
 	end
 end
 
-function checkEnemiesHitWithR(ballPosPoint)
+function checkEnemiesHitWithR()
 
 enemies = {}
-enemyHealth = {}
 
 for i, enemy in ipairs(GetEnemyHeroes()) do
 
-		local dashing, dashPos, info1 = Prodiction.IsDashing(enemy, 0, math.huge, Rdelay, Rradius, ballPosPoint)
-		local position, info2 = Prodiction.GetCircularAOEPrediction(enemy, 0, math.huge, Rdelay, Rradius, ballPosPoint)
-		local toSlow, pos, info2 = Prodiction.IsToSlow(enemy, 0, math.huge, Rdelay, Rradius, ballPosPoint)
+		local dashing, dashPos, info1 = Prodiction.IsDashing(enemy, 0, math.huge, Rdelay, Rradius, ballPos)
+		local position, info2 = Prodiction.GetCircularAOEPrediction(enemy, 0, math.huge, Rdelay, Rradius, ballPos)
+		local toSlow, pos, info2 = Prodiction.IsToSlow(enemy, 0, math.huge, Rdelay, Rradius, ballPos)
 
-		if not dashing and ValidTarget(enemy) and GetDistance(position, ballPosPoint) <= Rradius and GetDistance(enemy.visionPos, ballPosPoint) <= Rradius and toSlow and GetDistance(pos, ballPosPoint) <= Rradius then
+		if not dashing and ValidTarget(enemy) and GetDistance(position, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow and GetDistance(pos, ballPos) <= Rradius then
 				table.insert(enemies, enemy)
-				table.insert(enemyHealth, enemy)
-		elseif dashing and ValidTarget(enemy) and GetDistance(dashPos, ballPosPoint) <= Rradius and GetDistance(enemy.visionPos, ballPosPoint) <= Rradius and toSlow and GetDistance(pos, ballPosPoint) <= Rradius then
+		elseif dashing and ValidTarget(enemy) and GetDistance(dashPos, ballPos) <= Rradius and GetDistance(enemy.visionPos, ballPos) <= Rradius and toSlow and GetDistance(pos, ballPos) <= Rradius then
 				table.insert(enemies, enemy)
-				table.insert(enemyHealth, enemy)
 		end
 end
 
@@ -292,7 +290,7 @@ function OnSendPacket(p)
 	if Menu.Block.Block and p.header == Packet.headers.S_CAST then
 		local packet = Packet(p)
 		if packet:get('spellId') == _R then
-			if checkEnemiesHitWithR(ballPos) == 0 then
+			if checkEnemiesHitWithR() == 0 then
 				p:Block()
 			end
 		end
@@ -398,7 +396,9 @@ end
 
 function killR ()
 
-for _, enemy in ipairs(enemyHealth) do
+checkEnemiesHitWithR()
+
+for _, enemy in ipairs(enemies) do
 		local dmg = GetDamage(_R, enemy)
 
 		if myHero:CanUseSpell(_Q) == READY then
@@ -425,8 +425,6 @@ for _, enemy in ipairs(enemyHealth) do
 				end
 			end
 end
-
-enemyHealth = {}
 
 end
 
