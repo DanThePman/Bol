@@ -1,9 +1,35 @@
-require "Prodiction"
-
 if myHero.charName ~= "Orianna" or not VIP_USER then return end
 
+local LIBS = {
+["VPrediction"] = "https://raw.github.com/Hellsing/BoL/master/common/VPrediction.lua",
+["SOW"] = "https://raw.github.com/Hellsing/BoL/master/common/SOW.lua",
+["Prodiction"] = "https://bitbucket.org/Klokje/public-klokjes-bol-scripts/raw/ec830facccefb3b52212dba5696c08697c3c2854/Test/Prodiction/Prodiction.lua"
+}
+
+local DOWNLOADING_LIBS = false
+local dCounter = 0
+
+function DownloadCmpt()
+	dCounter = dCounter - 1
+	if dCounter == 0 then
+		DOWNLOADING_LIBS = false
+		print("<font color=\"#000000\">[</font><font color=\"#FFBF00\">Orianna-Prodiction</font><font color=\"#000000\">]</font> <font color=\"#848484\">All required libraries are now downloaded. Please reload for changes to take effect.</font>")
+	end
+end
+
+for LIB_NAME, LIB_URL in pairs(LIBS) do
+	if FileExist(LIB_PATH .. LIB_NAME .. ".lua") then
+		require(LIB_NAME)
+	else
+		DOWNLOADING_LIBS = true
+		DownloadFile(LIB_URL, LIB_PATH .. LIB_NAME..".lua", DownloadCmpt)
+		dCounter = dCounter + 1
+	end
+end
+if DOWNLOADING_LIBS then return end
+
 local ballPos = myHero
-local version = 1.3
+local version = 1.2
 enemyHealth = {}
 
 local InterruptList = 
@@ -52,6 +78,8 @@ local enemyMinions = nil
 local LastChampionSpell = {}
 
 	ts = TargetSelector(TARGET_LESS_CAST_PRIORITY, 1500)
+		VP = VPrediction(true)
+		simpleOrbWalker = SOW(VP)
 
 function OnLoad()
 
@@ -68,7 +96,7 @@ function OnLoad()
 		Menu.Combo:addParam("UseE2Range", "Range:", SCRIPT_PARAM_SLICE, 500, 0, 700)
 
 		Menu:addSubMenu("Harass", "Harass")
-		Menu.Harass:addParam("harassKeyDown", "Harass", SCRIPT_PARAM_ONKEYDOWN , false, 192)
+		Menu.Harass:addParam("harassKeyDown", "Harass", SCRIPT_PARAM_ONKEYDOWN , false, string.byte("C"))
 		Menu.Harass:addParam("harassKeyToggle", "Harass (TOGGLE)", SCRIPT_PARAM_ONKEYTOGGLE, false, 192)
 		Menu.Harass:addParam("harassQ", "Use Q", SCRIPT_PARAM_ONOFF , true)
 		Menu.Harass:addParam("harassW", "Use W", SCRIPT_PARAM_ONOFF , true)
@@ -85,6 +113,9 @@ function OnLoad()
 		Menu.Misc:addParam("autolvl", "Auto lvl", SCRIPT_PARAM_ONOFF, true)
 		Menu.Misc:addParam("autoMax", "Skill order:", SCRIPT_PARAM_LIST, 2, { "R>Q>W>E", "R>W>Q>E"})
 
+		Menu:addSubMenu("SOW", "Orbwalk")
+		simpleOrbWalker:LoadToMenu(Menu.Orbwalk)
+
 		Menu:addSubMenu("TeamFightLogic", "TeamFightLogic")
 		Menu.TeamFightLogic:addParam("tfKeyDown", "Initiate team fights with Q -> Ultimate", SCRIPT_PARAM_ONKEYDOWN , false, 192)
 		Menu.TeamFightLogic:addParam("tfKeyToggle", "(TOGGLE)", SCRIPT_PARAM_ONKEYTOGGLE, false, 192)
@@ -100,7 +131,6 @@ function OnLoad()
 
 		Menu:addParam("Version", "Version", SCRIPT_PARAM_INFO, version)
 end
-
 function OnGainBuff(unit, buff)
 	if unit.team == myHero.team and buff.name:lower():find("orianaghostself") then
 		ballPos = myHero
@@ -124,6 +154,7 @@ end
 function OnTick ()
 
 ts:update()
+--simpleOrbWalker:ForceTarget(ts.target)
 
 if Menu.Misc.autolvl then
 	if Menu.Misc.autoMax == 1 then
